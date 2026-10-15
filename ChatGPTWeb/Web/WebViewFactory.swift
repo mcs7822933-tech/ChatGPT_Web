@@ -15,6 +15,44 @@ enum WebViewFactory {
         preferences.isFraudulentWebsiteWarningEnabled = true
         configuration.preferences = preferences
 
+        // V1.3 - 修正 iOS 16 ChatGPT 顶部导航栏透明背景
+        let topBarFixJavaScript = #"""
+        (function () {
+            if (window.location.hostname !== 'chatgpt.com') return;
+            if (document.getElementById('ios16-opaque-chat-header')) return;
+
+            var style = document.createElement('style');
+            style.id = 'ios16-opaque-chat-header';
+
+            style.textContent = `
+               #page-header,
+                [data-testid="page-header"] {
+                    background-color: var(--main-surface-primary, #ffffff) !important;
+                    background-image: none !important;
+                    -webkit-backdrop-filter: none !important;
+                    backdrop-filter: none !important;
+                }
+
+                html.dark #page-header,
+                html.dark [data-testid="page-header"],
+                html[data-theme="dark"] #page-header,
+                html[data-theme="dark"] [data-testid="page-header"] {
+                    background-color: var(--main-surface-primary, #212121) !important;
+                }
+            `;
+
+            (document.head || document.documentElement).appendChild(style);
+        })();
+        """#
+
+        configuration.userContentController.addUserScript(
+            WKUserScript(
+                source: topBarFixJavaScript,
+                injectionTime: .atDocumentEnd,
+                forMainFrameOnly: true
+            )
+        )
+
         return configuration
     }
 
